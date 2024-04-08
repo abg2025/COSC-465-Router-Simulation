@@ -3,17 +3,35 @@
     {
       "id": "Router1",
       "interfaces": [
-        {"name": "eth0", "ip": "10.0.1.1", "mask": "255.255.255.0", "mac": "00:00:00:00:01:01"}
-      ]
-    },
-    {
-      "id": "Router2",
-      "interfaces": [
-        {"name": "eth0", "ip": "10.0.2.1", "mask": "255.255.255.0", "mac": "00:00:00:00:02:01"}
+        {"name": "eth0", "ip": "192.168.1.1", "mask": "255.255.255.0"},
+        {"name": "eth1", "ip": "10.0.0.1", "mask": "255.255.255.0"}
       ]
     }
   ],
+  "clients": [
+    {
+      "id": "ClientA",
+      "ip": "192.168.1.100",
+      "gateway": "192.168.1.1"
+    },
+    {
+      "id": "ClientB",
+      "ip": "10.0.0.100",
+      "gateway": "10.0.0.1"
+    }
+  ],
   "links": [
-    {"from": "Router1", "interface": "eth0", "to": "Router2", "interface": "eth0"}
+    {
+      "from": "ClientA",
+      "to": "Router1",
+      "interfaceFrom": "eth0",
+      "interfaceTo": "eth0"
+    },
+    {
+      "from": "ClientB",
+      "to": "Router1",
+      "interfaceFrom": "eth0",
+      "interfaceTo": "eth1"
+    }
   ]
 }
