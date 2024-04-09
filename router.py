@@ -10,6 +10,7 @@ class Router:
         self.net = net # switchyard network object
         self.interfaces = interfaces # dictionary containing interface information (ip, subnet mask, mac address)
         self.routing_table = {} # initialize empty routing table
+        self.client_table = {}
 
     # responsible for handling incoming pakcets, distinguishing ARP requests from
     # other types of packets, and calling the approporiate hangling method
