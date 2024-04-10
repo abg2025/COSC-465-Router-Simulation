@@ -1,7 +1,7 @@
 class Packet:
 # should have source IP, source Mac address, destination IP, destination IP MAC address,
 
-# Look at 
+
 
     def __init__(self,sourceIp,src_mac_addr,destIP,dest_mac_addr):
         self.sourceIP = sourceIp
