@@ -54,8 +54,35 @@ class Router:
     # should be implemented to handle other types of IP packets, such as forwarding
     # packets based on the routing table
     def _handle_ip_packet(self, timestamp, input_port, packet):
-        #TODO
-        return
+        # method to handle ip packets (e.g., forwarding based on routing table)
+        ip_header = packet.get_header(IPv4) # get IPv4 header from packet
+        if ip_header is None: # check if packet is not IPv4
+            return
+        
+        dst_ip = ip_header.dst # destination ip address of the pakcet
+        next_hop = self.routing_table.get(dst_ip) # get next hop from routing table
+
+        if next_hop is None: #if next hop is not found in routing table
+            # forward packet to default gateway or drop it
+            # implement your logic here
+            return
+        
+        output_port = next_hop[0] # next hop output port
+        next_router = next_hop[1] # next router's mac address
+
+        if next_router == 'direct_link':
+            # if the next hop is a direct link (no intermediate router), forward the packet to the destination packet
+            eth_header = packet.get_header(Ethernet)
+            eth_header.dst = self.interfaces[output_port][2] # set destination mac address to client's mac address
+            output_port = output_port # set output port to interface connected to the destination client
+            next_router = None # no next router (direct link)
+        else:
+            # update ethernet header with next router's mac address
+            eth_header = packet.get_header(Ethernet)
+            eth_header.dst = next_router
+
+        # send packet out through specified output port
+        self.send_packet(output_port, packet)
 
     # sends packets out through the specified output port
     def send_packet(self, output_port, packet):
