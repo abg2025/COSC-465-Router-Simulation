@@ -1,6 +1,7 @@
 from switchyard.lib.userlib import *
 import router
 import json
+import client 
 
 class JSON:
     def __init__(self, file_path):
@@ -13,21 +14,30 @@ class JSON:
     
 class Simulation:
     def __init__(self, net, config) -> None:
+        self.routers = {}
+        self.clients = {}
+        self.net = net
+        self.config = config 
         pass
 
-def setup_network(self, net, config):
-    # Initialize routers based on the JSON config
-    routers = {}
-    for router_info in config.get('routers', []):
-        interfaces = {intf['name']: (intf['ip'], intf['mask'], intf['mac']) for intf in router_info['interfaces']}
-        routers[router_info['id']] = router.Router(net, interfaces)
+    def setup_network(self):
+        # Initialize routers based on the JSON config
+        for router_info in self.config.get('routers'):
 
-    # Example of initializing client behavior
-    clients = {}
-    for client_info in config.get('clients', []):
-        clients[client_info['id']] = client_info['ip']
-        # client logic 
-    return routers, clients
+            self.routers[router_info['name']] = router.Router(self.net, router_info['name'], router_info['ip'], router_info['mask'], router_info['mac_addr'])
+
+        # Example of initializing client behavior
+        for client_info in self.config.get('clients'):
+            self.clients[client_info['name']] = client.Client(self.net, client_info['ip'], client_info['mac'], client_info['name'])
+            # client logic 
+
+    @property
+    def getRouters(self):
+        return self.routers 
+    
+    @property
+    def getClients(self):
+        return self.clients
     
 def main(net):
     # Load and parse the JSON configuration
@@ -35,10 +45,10 @@ def main(net):
     config = json_file.load_network_config()
         
     # Setup the network based on the JSON configuration
-    setup_network(net, config)
-    
-    my_interfaces = net.interfaces() 
-    mymacs = [intf.ethaddr for intf in my_interfaces]
+    simulation = Simulation(net, config)
+    simulation.setup_network()
+
+    nodes = net.interfaces()
 
     while True:
         try:
@@ -47,6 +57,11 @@ def main(net):
             continue
         except Shutdown:
             return
-
-    net.shutdown()
+        log_debug ("In {} received packet {} on {}".format(net.name, packet, dev))
+        eth = packet.get_header(Ethernet)
+        if eth is None:
+            log_info("Received a non-Ethernet packet?!")
+            continue
+    
+        net.shutdown()
 

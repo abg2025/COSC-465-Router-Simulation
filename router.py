@@ -5,10 +5,15 @@ from switchyard.lib.userlib import * # got this from the pdf
 # values are tuples containing IP address, subnet mask, and MAC address for each interface
 class Router:
     
-    def __init__(self, net, interfaces):
+    def __init__(self, net, name, ip, mask, mac_addr):
+      
+
         # constructor for router class, initializes the router with Switchyard network object and itnerfaces diciontary
         self.net = net # switchyard network object
-        self.interfaces = interfaces # dictionary containing interface information (ip, subnet mask, mac address)
+        self.name = name
+        self.ip = ip 
+        self.mask = mask
+        self.mac_addr = mac_addr
         self.routing_table = {} # initialize empty routing table
         self.client_table = {}
 
