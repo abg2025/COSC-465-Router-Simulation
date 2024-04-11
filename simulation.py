@@ -10,8 +10,12 @@ class JSON:
         with open(self.file_path, 'r') as file:
             config = json.load(file)
         return config
+    
+class Simulation:
+    def __init__(self, net, config) -> None:
+        pass
 
-def setup_network(self,net, config):
+def setup_network(self, net, config):
     # Initialize routers based on the JSON config
     routers = {}
     for router_info in config.get('routers', []):
@@ -32,7 +36,17 @@ def main(net):
         
     # Setup the network based on the JSON configuration
     setup_network(net, config)
-    print("Created")
+    
+    my_interfaces = net.interfaces() 
+    mymacs = [intf.ethaddr for intf in my_interfaces]
+
+    while True:
+        try:
+            timestamp,dev,packet = net.recv_packet()
+        except NoPackets:
+            continue
+        except Shutdown:
+            return
 
     net.shutdown()
 

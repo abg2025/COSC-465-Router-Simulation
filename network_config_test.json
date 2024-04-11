@@ -1,12 +1,13 @@
 {
   "routers": [
     {
-      "id": "Router1",
+      "name": "Router1",
       "ip": "192.168.1.1", 
-      "mask": "255.255.255.0"
+      "mask": "255.255.255.0",
+      "interfaces": {"name": "Client1toRouter1", "mcadrr" : ""}
     },
     {
-      "id": "Router2",
+      "name": "Router2",
       "ip": "111.122.1.1", 
       "mask": "255.255.255.0"
     }
