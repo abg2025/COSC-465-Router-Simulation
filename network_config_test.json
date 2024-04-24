@@ -26,5 +26,16 @@
       "mask": "255.255.255.0",
       "mac_addr": "00:00:00:00:02:02"
     }
+  ],
+  "direct links": [
+    {
+      "name": "Router1",
+      "links": ["Router2"]
+    },
+    {
+      "name": "Router2",
+      "links": ["Router1"]
+    }
   ]
+
 }

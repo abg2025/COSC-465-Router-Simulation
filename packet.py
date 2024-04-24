@@ -5,12 +5,13 @@ class Packet:
     
 
 
-    def __init__(self,sourceIp,src_mac_addr,destIP,dest_mac_addr):
+    def __init__(self,sourceIp,src_mac_addr,destIP,dest_mac_addr, packet_type):
         self.sourceIP = sourceIp
         self.src_mac_addr = src_mac_addr
         self.destIP = destIP
         self.dest_mac_addr = dest_mac_addr
         self.Packet = Packet()
+        self.packet_type = packet_type
         
 
     def getSourceIP(self):

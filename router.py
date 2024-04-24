@@ -14,8 +14,8 @@ class Router:
         self.ip = ip 
         self.mask = mask
         self.mac_addr = mac_addr
-        self.routing_table = {} # initialize empty routing table
-        self.client_table = {}
+        self.routing_table = {"ip": [], "next_hop": [], "router_obj": []} # initialize empty routing table
+        self.client_table = []
 
     # responsible for handling incoming pakcets, distinguishing ARP requests from
     # other types of packets, and calling the approporiate hangling method
@@ -95,4 +95,18 @@ class Router:
         # send packet using switchyard's send_packet method
         # send_packet is invpoked on the net object, which is the swtichyard network object
         # this method sends the specific pakcet through the specific port in the network simulation
+
+    def add_links(self, direct_links, routers, clients):
+        for name in routers.keys():
+            router = routers[name]
+            self.routing_table["ip"].append(router["ip"])
+            self.routing_table["router_obj"].append(router)
+            if router["name"] in direct_links:
+                self.routing_table["next_hop"].append("direct")
+                print(f"Added {router["name"]} to {self.name} routing table as a direct link")
+            else:
+                self.routing_table['next_hop'].append("N/A")
+                print(f"Added {router["name"]} to {self.name} routing table next hop not found") 
+        for name in clients.keys():
+            pass
     

@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
+
 from switchyard.lib.userlib import *
-import router
-import json
-import packet
-import simulation
+# import router
+# import json
+# import packet
+# import simulation
 
 # def create_interfaces(s):
 #     obj = simulation.JSON("network_config_test")
@@ -28,5 +30,5 @@ import simulation
 
 #     return s
 
-#log_debug("Test")
-scenario = TestScenario("test")
+# log_debug("Test")
+scenario = TestScenario("test example")
