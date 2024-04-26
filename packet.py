@@ -1,55 +1,33 @@
-from switchyard.lib.userlib import *
-
 class Packet:
-# should have source IP, source Mac address, destination IP, destination IP MAC address,
-    
-
-
-    def __init__(self,sourceIp,src_mac_addr,destIP,dest_mac_addr, packet_type):
-        self.sourceIP = sourceIp
+    def __init__(self, source_ip, src_mac_addr, dest_ip, dest_mac_addr, packet_type, payload='', ttl=64, size=0, seq_num=None, ack_num=None, flags=None):
+        self.source_ip = source_ip
         self.src_mac_addr = src_mac_addr
-        self.destIP = destIP
+        self.dest_ip = dest_ip
         self.dest_mac_addr = dest_mac_addr
-        self.Packet = Packet()
         self.packet_type = packet_type
-        
+        self.payload = payload
+        self.ttl = ttl
+        self.size = size if size else self.estimate_size()
+        self.seq_num = seq_num
+        self.ack_num = ack_num
+        self.flags = flags
+        self.checksum = self.calculate_checksum()
 
-    def getSourceIP(self):
-        return self.sourceIP
-    
-    def getMacAddr(self):
-        return self.src_mac_addr
-    
-    def getDestIP(self):
-        return self.destIP 
-    
-    def getDestMacAddr(self):
-        return self.dest_mac_addr
-    
-    def create_arp_request(self):
-        # Construct an ARP request packet
-        ether = Ethernet()
-        ether.src = self.src_mac_addr
-        ether.dst = 'ff:ff:ff:ff:ff:ff'
-        ether.ethertype = EtherType.ARP
-        arp = Arp(operation=ArpOperation.Request,
-            senderhwaddr=self.src_mac_addr,
-            senderprotoaddr=self.sourceIP,
-            targethwaddr='ff:ff:ff:ff:ff:ff',
-            targetprotoaddr=self.destIP)
-        arppacket = ether + arp
-        return arppacket
+    def calculate_checksum(self):
+        checksum = sum(ord(c) for c in str(self.payload)) % 256
+        checksum += sum(ord(c) for c in self.source_ip + self.dest_ip + self.src_mac_addr + self.dest_mac_addr) % 256
+        return checksum
 
-    def create_arp_reply(self):
-        # Construct an ARP reply packet
-        ether = Ethernet()
-        ether.src = self.src_mac_addr
-        ether.dst = self.dest_mac_addr
-        ether.ethertype = EtherType.ARP
-        arp = Arp(operation=ArpOperation.Reply,
-            senderhwaddr=self.src_mac_addr,
-            senderprotoaddr=self.sourceIP,
-            targethwaddr=self.dest_mac_addr,
-            targetprotoaddr=self.destIP)
-        arppacket = ether + arp
-        return arppacket
+    def verify_checksum(self):
+        return self.calculate_checksum() == self.checksum
+
+    def estimate_size(self):
+        base_size = 20  # Basic IP header size
+        if self.packet_type == 'TCP':
+            base_size += 20  # Add TCP header size
+        elif self.packet_type == 'ARP':
+            base_size += 28  # Add ARP header size
+        return base_size + len(self.payload)
+
+    def __str__(self):
+        return "Packet({}): {} -> {}, Size: {} bytes".format(self.packet_type, self.source_ip, self.dest_ip, self.size)

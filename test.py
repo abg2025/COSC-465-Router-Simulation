@@ -1,34 +1,20 @@
-#!/usr/bin/env python3
+import unittest
+from packet import Packet
+from network import Network
 
-from switchyard.lib.userlib import *
-# import router
-# import json
-# import packet
-# import simulation
+class TestNetworkSimulation(unittest.TestCase):
+    def setUp(self):
+        """Setup the network from a JSON file."""
+        self.network = Network("network_config_test.json")
 
-# def create_interfaces(s):
-#     obj = simulation.JSON("network_config_test")
-#     config = obj.load_network_config()
-#     for interface in config:
-#         for details in interface:
-#             s.add_interface(details['name'], details['mac_addr'], ipaddr=details['ip'])
+    def test_packet_transfer(self):
+        """Test if a packet sent from ClientA reaches ClientB."""
+        clientA = self.network.devices['ClientA']
+        clientB = self.network.devices['ClientB']
+        router1 = self.network.devices
+        packet = Packet("192.168.1.2", "00:00:00:00:02:01", "111.122.1.2", "00:00:00:00:02:02", "IP", "Hello, ClientB!")
+        clientA.send_packet(packet, "Hi ClientB")
+        self.assertTrue(("192.168.1.1" in clientA.arp_table.keys()) == True)
 
-
-# def tests():
-#     s = TestScenario("Simulating Network")
-
-
-#     # Setup: Add interfaces (nodes)
-#     create_interfaces(s)
-
-#     # Expected ARP request packet from router to discover Client1's MAC
-#     router_broadcast_packet = packet.Packet("192.168.1.1", "00:00:00:00:01:01", "192.168.1.2", "00:00:00:00:02:01")
-#     expected_arp_req = router_broadcast_packet.create_arp_request()
-
-#     # Expectation: Router broadcasts ARP request to find Client1's MAC address
-#     s.expect(PacketOutputEvent("Router1", expected_arp_req, display=Ethernet), "The router should broadcast an ARP request to discover Client1's MAC address.")
-
-#     return s
-
-# log_debug("Test")
-scenario = TestScenario("test example")
+if __name__ == '__main__':
+    unittest.main()

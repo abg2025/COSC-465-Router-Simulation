@@ -2,14 +2,14 @@
   "routers": [
     {
       "name": "Router1",
-      "ip": "192.168.1.1", 
-      "mask": "255.255.255.0",
+      "ip": "192.168.1.1",
+      "mask": "/24",
       "mac_addr": "00:00:00:00:01:01"
     },
     {
       "name": "Router2",
-      "ip": "111.122.1.1", 
-      "mask": "255.255.255.0",
+      "ip": "111.122.1.1",
+      "mask": "/24",
       "mac_addr": "00:00:00:00:01:02"
     }
   ],
@@ -17,25 +17,19 @@
     {
       "name": "ClientA",
       "ip": "192.168.1.2",
-      "mask": "255.255.255.0",
+      "mask": "/24",
       "mac_addr": "00:00:00:00:02:01"
     },
     {
       "name": "ClientB",
       "ip": "111.122.1.2",
-      "mask": "255.255.255.0",
+      "mask": "/24",
       "mac_addr": "00:00:00:00:02:02"
     }
   ],
-  "direct links": [
-    {
-      "name": "Router1",
-      "links": ["Router2"]
-    },
-    {
-      "name": "Router2",
-      "links": ["Router1"]
-    }
+  "links": [
+    {"from": "192.168.1.1", "to": "111.122.1.1"},
+    {"from": "ClientA", "to": "Router1"},
+    {"from": "ClientB", "to": "Router2"}
   ]
-
 }

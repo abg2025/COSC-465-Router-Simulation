@@ -1,112 +1,62 @@
-from switchyard.lib.userlib import * # got this from the pdf
-
-# the router class would take in the 'net' object (which is the Switchyard network
-# object) and the 'interfaces' dictionary, where keys are the interface names and 
-# values are tuples containing IP address, subnet mask, and MAC address for each interface
+from packet import Packet 
+import ipaddress
 class Router:
-    
-    def __init__(self, net, name, ip, mask, mac_addr):
-      
-
-        # constructor for router class, initializes the router with Switchyard network object and itnerfaces diciontary
-        self.net = net # switchyard network object
+    def __init__(self, name, ip, mask, mac_addr, network):
         self.name = name
-        self.ip = ip 
+        self.ip = ip
         self.mask = mask
         self.mac_addr = mac_addr
-        self.routing_table = {"ip": [], "next_hop": [], "router_obj": []} # initialize empty routing table
-        self.client_table = []
+        self.network = network
+        self.routing_table = []
+        self.arp_table = {}
 
-    # responsible for handling incoming pakcets, distinguishing ARP requests from
-    # other types of packets, and calling the approporiate hangling method
-    def process_packet(self, timestamp, input_port, packet):
-        # get_header is a switchyard method used to retrieve the ehader of a 
-        # specific protocol from a pakcet
-        eth_packet = packet.get_header(Ethernet) # retrieves the ethernet header from packet
-        if eth_packet is None:
-            return
+    def receive_packet(self, packet):
+        print("recieved")
+        self.process_packet(packet)
+
+    def process_packet(self, packet):
+        if packet.packet_type == 'ARP':
+            self.handle_arp_reply(packet)
+        elif packet.packet_type == 'IP':
+            self.handle_ip(packet)
+
+    def handle_arp_reply(self, packet):
+        if packet.dest_ip == self.ip:
+            if packet.payload['operation'] == 'request':
+                print("Router Recieved")
+                # Respond to ARP request
+                arp_reply = Packet(self.ip, self.mac_addr, packet.source_ip, packet.src_mac_addr, 'ARP',{'operation': 'reply'})
+                self.network.send_packet(arp_reply)  # Send reply directly to the requester's MAC address
+                # Update ARP table with requester's IP and MAC
+                self.arp_table[packet.source_ip] = packet.src_mac_addr
+            if packet.payload['operation'] == 'reply':
+                # Update ARP table when a reply is received
+                self.arp_table[packet.source_ip] = packet.src_mac_addr
+                print("Added Client to {}".format(self.name))
+
+    def is_ip_in_subnet(self, ip1, ip2):
+        ip1 = ipaddress.ip_address(ip1)
+        ip2 = ipaddress.ip_address(ip2)
+        return ip1 in ip2
+
+    def handle_ip(self, packet):
+        destination = packet.dest_ip
+        for route in self.routing_table:
+            if self.is_ip_in_subnet(destination, self.ip + self.mask):
+                if not self.arp_table[destination]:
+                    self.perform_arp_request(self, destination)
+            if destination == route['dest_ip']:
+                next_hop_ip = route['next_hop_ip']
+                next_hop_mac = self.network.resolve_mac(next_hop_ip)
+                packet.dest_mac_addr = next_hop_mac
+                packet.src_mac_addr = self.mac_addr
+                self.network.send_packet(packet, next_hop_mac)
+                return
+        print("No route found for IP: {}".format(destination))
+
+    def perform_arp_request(self, dest_ip):
+        # Broadcast ARP request to resolve IP address to MAC address
+        arp_request = Packet(self.ip, self.mac_addr, dest_ip, 'FF:FF:FF:FF:FF:FF', 'ARP', {'operation': 'request'})
+        self.network.send_packet(arp_request)
         
-        if eth_packet.dst == self.interfaces[input_port][2]:
-            # packet is destined for this router
-            # checking if destination mac address matches router's interface mac address
-            if isinstance(packet.get_header(Arp), Arp):
-                # handle ARP request
-                self._handle_arp_request(timestamp, input_port, packet)
-            else:
-                # handle other types of packets (e.g., IP)
-                self._handle_ip_packet(timestamp, input_port, packet)
 
-    # handles ARP requests and sends ARP replies if the target UP address mathces
-    # any of the router's interfaces (?????)
-    def _handle_arp_request(self, timestamp, input_port, packet):
-        arp_header = packet.get_header(Arp)
-        if arp_header is None or arp_header.operation != ArpOperation.Request:
-            return
-        
-        target_ip = arp_header.targetprotoaddr # get target ip address from arp request
-        for intf, (ip, mask, mac) in self.interfaces.items():
-            # iterate over router's interfaces to find match for target ip address
-            if ip == target_ip:
-                # if target ip matches interface ip, send arp reply
-                arp_reply = create_ip_arp_reply(mac, arp_header.senderhwaddr, ip, arp_header.senderprotoaddr)
-                # create_ip_arp_reply is a swtichyard method used to create an arp reply packet
-                # it takes the mac address of the replying interface, the mac address of the sender,
-                # the ip address of the replying interface, and the ip address of the sender as arguments
-                # and returna an arp reply packet
-                self.net.send_packet(input_port, arp_reply)
-        return
-
-    # should be implemented to handle other types of IP packets, such as forwarding
-    # packets based on the routing table
-    def _handle_ip_packet(self, timestamp, input_port, packet):
-        # method to handle ip packets (e.g., forwarding based on routing table)
-        ip_header = packet.get_header(IPv4) # get IPv4 header from packet
-        if ip_header is None: # check if packet is not IPv4
-            return
-        
-        dst_ip = ip_header.dst # destination ip address of the pakcet
-        next_hop = self.routing_table.get(dst_ip) # get next hop from routing table
-
-        if next_hop is None: #if next hop is not found in routing table
-            # forward packet to default gateway or drop it
-            # implement your logic here
-            return
-        
-        output_port = next_hop[0] # next hop output port
-        next_router = next_hop[1] # next router's mac address
-
-        if next_router == 'direct_link':
-            # if the next hop is a direct link (no intermediate router), forward the packet to the destination packet
-            eth_header = packet.get_header(Ethernet)
-            eth_header.dst = self.interfaces[output_port][2] # set destination mac address to client's mac address
-            output_port = output_port # set output port to interface connected to the destination client
-            next_router = None # no next router (direct link)
-        else:
-            # update ethernet header with next router's mac address
-            eth_header = packet.get_header(Ethernet)
-            eth_header.dst = next_router
-
-        # send packet out through specified output port
-        self.send_packet(output_port, packet)
-
-    # sends packets out through the specified output port
-    def send_packet(self, output_port, packet):
-        self.net.send_packet(output_port, packet)
-        # send packet using switchyard's send_packet method
-        # send_packet is invpoked on the net object, which is the swtichyard network object
-        # this method sends the specific pakcet through the specific port in the network simulation
-
-    def add_links(self, direct_links, routers, clients):
-        for name in routers.keys():
-            router = routers[name]
-            self.routing_table["ip"].append(router["ip"])
-            self.routing_table["router_obj"].append(router)
-            if router["name"] in direct_links:
-                self.routing_table["next_hop"].append("direct")
-                print(f"Added {router["name"]} to {self.name} routing table as a direct link")
-            else:
-                self.routing_table['next_hop'].append("N/A")
-                print(f"Added {router["name"]} to {self.name} routing table next hop not found") 
-        for name in clients.keys():
-            pass
-    
