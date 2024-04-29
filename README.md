@@ -10,7 +10,7 @@ Through this project, we have achieved the following learning objectives:
 * Developed skills in meticulous error checking and problem-solving within a networked environment.
 
 ## Important Tips
-* We found it crucial to thoroughly understand each component of our simulation by reading through the existing codebase before beginning any development.
+* We found it crucial to thoroughly understand each component of our simulation by reading and understanding switchyard before beginning any development. (Even though we didn't use switchyard, our network object was loosely based on it) 
 * Starting early and spacing out our work sessions helped us manage the complexity of the project more effectively.
 * Regular testing at each stage of development was key to identifying and resolving issues early.
 
