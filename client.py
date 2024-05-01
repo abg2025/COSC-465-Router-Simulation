@@ -1,9 +1,9 @@
 from packet import Packet
 class Client:
-    def __init__(self, name, ip, mask, mac_addr, network):
+    def __init__(self, name, ip, gateway, mac_addr, network):
         self.name = name
         self.ip = ip
-        self.mask = mask
+        self.gateway = gateway
         self.mac_addr = mac_addr
         self.network = network
         self.received_packets = []  # List to store received packets
@@ -14,9 +14,13 @@ class Client:
         dest_mac = self.arp_table.get(packet.dest_ip, 'FF:FF:FF:FF:FF:FF')
         if dest_mac == 'FF:FF:FF:FF:FF:FF':
             packet_type = "ARP"
-            payload = {"operation": "request"}
+            data = {"operation": "request"}
         packet = Packet(self.ip, self.mac_addr, packet.dest_ip, dest_mac, packet_type, payload=data)
+        print("1" , packet)
         self.network.send_packet(packet)  # Send using device name as identifier
+
+    def send_arp_packet(self, packet):
+        pass
 
     def receive_packet(self, packet):
         if packet.verify_checksum():
@@ -36,6 +40,6 @@ class Client:
     def handle_arp_packet(self, packet):
         if packet.payload['operation'] == 'request' and packet.dest_ip == self.ip:
             # Respond with ARP reply
-            arp_reply = Packet(self.ip, self.mac_addr, packet.source_ip, packet.src_mac_addr, 'ARP', {'operation': 'reply', 'target_mac': self.mac_addr, 'sender_mac': packet.src_mac_addr})
+            arp_reply = Packet(self.ip, self.mac_addr, packet.source_ip, packet.src_mac_addr, 'ARP', {'operation': 'reply'})
             self.network.send_packet(arp_reply, self.name)
 
