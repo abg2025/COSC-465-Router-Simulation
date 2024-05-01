@@ -42,9 +42,9 @@ class Network:
                 device.receive_packet(packet)
 
     def send_ospf_packet(self, packet):
-        dest_router_name = self.get_router_by_ip(packet.source_ip)
-        if dest_router_name:
-            self.devices[dest_router_name].recieve_packet(packet)
+        dest_router = self.get_router_by_ip(packet.dest_ip)
+        if dest_router != None:
+            dest_router.recieve_packet(packet)
         else:
             print("No router found for OSPF packet destination IP: {}".format(packet.dest_ip))
 

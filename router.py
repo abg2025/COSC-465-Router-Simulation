@@ -65,7 +65,7 @@ class Router:
         if neighbor_ip not in self.ospf_neighbors:
             self.ospf_neighbors.add(neighbor_ip)
             # Send OSPF Hello packet back to neighbor
-            hello_packet = Packet(self.ip, self.mac_addr, neighbor_ip, self.arp_table.get(neighbor_ip, 'FF:FF:FF:FF:FF:FF'), 'OSPF', {'type': 'Hello'})
+            hello_packet = Packet(self.ip, self.mac_addr, neighbor_ip, neighbor_ip, 'OSPF', {'type': 'Hello'})
             self.network.send_packet(hello_packet)
 
     def process_ospf_lsa(self, packet):

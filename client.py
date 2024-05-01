@@ -1,4 +1,5 @@
 from packet import Packet
+import time 
 class Client:
     def __init__(self, name, ip, gateway, mac_addr, network):
         self.name = name
@@ -13,14 +14,23 @@ class Client:
         # Lookup destination MAC address in the ARP table, use broadcast address if not found
         dest_mac = self.arp_table.get(packet.dest_ip, 'FF:FF:FF:FF:FF:FF')
         if dest_mac == 'FF:FF:FF:FF:FF:FF':
-            packet_type = "ARP"
-            data = {"operation": "request"}
-        packet = Packet(self.ip, self.mac_addr, packet.dest_ip, dest_mac, packet_type, payload=data)
-        print("1" , packet)
-        self.network.send_packet(packet)  # Send using device name as identifier
+            # Send ARP request and wait for ARP reply
+            self.send_arp_packet(packet)
+            # Wait for a short period to receive ARP reply
+            time.sleep(1)  # Adjust the sleep duration as needed
+            dest_mac = self.arp_table.get(packet.dest_ip, 'FF:FF:FF:FF:FF:FF')  # Try again after waiting
+
+        # If ARP reply was received or found in ARP table, send the packet
+        if dest_mac != 'FF:FF:FF:FF:FF:FF':
+            new_packet = Packet(self.ip, self.mac_addr, packet.dest_ip, dest_mac, packet.packet_type, payload=data)
+            self.network.send_packet(new_packet)
+        
 
     def send_arp_packet(self, packet):
-        pass
+        packet_type = "ARP"
+        data = {"operation": "request"}
+        packet = Packet(self.ip, self.mac_addr, packet.dest_ip, 'FF:FF:FF:FF:FF:FF', packet_type, payload=data)
+        self.network.send_packet(packet)  # Send using device name as identifier
 
     def receive_packet(self, packet):
         if packet.verify_checksum():
