@@ -90,6 +90,8 @@ class Router:
         lsa_info = packet.payload['lsa_info']
         # update the lsdb with the receieved lsa information
         self.lsdb[lsa_info['lsa_id']] = lsa_info
+        # flood the lsa to ospf neightbors
+        self.flood_ospf_lsa(packet)
         # update the routing table based on the lsdb
         self.update_routing_table()
 
