@@ -33,6 +33,23 @@ class Network:
             # create client instance and add client to devices dictionary
             self.devices[client_info['name']] = Client(client_info['name'], client_info['ip'], client_info['gateway'], client_info['mac_addr'], self)
 
+        for link in config['links']:
+            self.add_link(link['from'], link['to'])
+
+    def add_link(self, from_device, to_device):
+        # Add bidirectional link between devices
+        if from_device not in self.connections:
+            self.connections[from_device] = []
+        if to_device not in self.connections:
+            self.connections[to_device] = []
+
+        self.connections[from_device].append(to_device)
+        self.connections[to_device].append(from_device)
+
+    def get_neighbors(self, device_ip):
+        # Get neighbors of a device based on connections
+        return self.connections.get(device_ip, [])
+    
     def get_router_by_ip(self, ip):
         # find a router with the specified ip address
         for device_name, device in self.devices.items():
@@ -53,11 +70,11 @@ class Network:
             if self.is_ip_in_subnet(device.ip, packet.source_ip) and device.ip != packet.source_ip:
                 device.receive_packet(packet)
 
-    def send_ospf_packet(self, packet):
+    def send_RIP_packet(self, packet):
         # send an OSPF packet to the destination router
         dest_router = self.get_router_by_ip(packet.dest_ip)
         if dest_router != None:
-            dest_router.recieve_packet(packet)
+            dest_router.receive_packet(packet)
         else:
             print("No router found for OSPF packet destination IP: {}".format(packet.dest_ip))
 
@@ -68,10 +85,10 @@ class Network:
                 device.receive_packet(packet)
                 return 
 
-    def send_packet(self, packet):
+    def send_packet(self, packet, source_ip, dest_ip):
         # determine packet type and route accordingly
-        if packet.packet_type == 'OSPF':
-            self.send_ospf_packet(packet)
+        if packet.packet_type == 'RIP':
+            self.send_RIP_packet(packet)
         elif packet.dest_mac_addr == 'FF:FF:FF:FF:FF:FF':
             self.send_broadcast_packet(packet)
         else:

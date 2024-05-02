@@ -10,26 +10,25 @@ class Client:
         self.received_packets = []  # List to store received packets
         self.arp_table = {}  # Initialize ARP table for IP-to-MAC resolutions
 
-    def send_packet(self, packet, data):
+    def send_packet(self, packet):
         # Lookup destination MAC address in the ARP table, use broadcast address if not found
-        dest_mac = self.arp_table.get(packet.dest_ip, 'FF:FF:FF:FF:FF:FF')
+        dest_mac = self.arp_table.get(self.gateway, 'FF:FF:FF:FF:FF:FF')
         if dest_mac == 'FF:FF:FF:FF:FF:FF':
             # Send ARP request and wait for ARP reply
             self.send_arp_packet(packet)
             # Wait for a short period to receive ARP reply
-            time.sleep(1)  # Adjust the sleep duration as needed
-            dest_mac = self.arp_table.get(packet.dest_ip, 'FF:FF:FF:FF:FF:FF')  # Try again after waiting
+            time.sleep(1)
+            dest_mac = self.arp_table.get(self.gateway, 'FF:FF:FF:FF:FF:FF')  # Try again after waiting
 
         # If ARP reply was received or found in ARP table, send the packet
         if dest_mac != 'FF:FF:FF:FF:FF:FF':
-            new_packet = Packet(self.ip, self.mac_addr, packet.dest_ip, dest_mac, packet.packet_type, payload=data)
-            self.network.send_packet(new_packet)
+            self.network.send_packet(packet, True)
         
 
     def send_arp_packet(self, packet):
         packet_type = "ARP"
         data = {"operation": "request"}
-        packet = Packet(self.ip, self.mac_addr, packet.dest_ip, 'FF:FF:FF:FF:FF:FF', packet_type, payload=data)
+        packet = Packet(self.ip, self.mac_addr, self.gateway, 'FF:FF:FF:FF:FF:FF', packet_type, payload=data)
         self.network.send_packet(packet)  # Send using device name as identifier
 
     def receive_packet(self, packet):
