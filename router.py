@@ -74,12 +74,37 @@ class Router:
 
     #given the network address, cost, next_hop add into routing table where the key is the network_address 
     def update_routing_table(self, network_address, cost, next_hop):
-        pass
+        self.routing_table.append({'dest_ip': network_address, 'cost': cost, 'next_hop_ip': next_hop})
         
-    #when router recieves RIP packet, it decides how to update routing table 
+    '''
+    # basic implementation 
     def recieve_RIP_packet(self, packet):
-        pass
-   
+        for route in packet.payload['routes']:
+            self.update_routing_table(route['network_address'], route['cost'], packet.source_ip)
+   '''
+   #when router recieves RIP packet, it decides how to update routing table
+    def receive_RIP_packet(self, packet):
+        for route in packet.payload['routes']:
+            network_address = route['network_address']
+            cost = route['cost'] + 1  # increment cost by 1 to represent the hop count
+            next_hop = packet.source_ip
+            
+            # check if route already exists in the routing table
+            existing_route = None
+            for existing_entry in self.routing_table:
+                if existing_entry['dest_ip'] == network_address:
+                    existing_route = existing_entry
+                    break
+            
+            if existing_route:
+                # route exists, update it if necessary
+                if cost < existing_route['cost']:
+                    existing_route['cost'] = cost
+                    existing_route['next_hop_ip'] = next_hop
+            else:
+                # route doesn't exist, add it to the routing table
+                self.update_routing_table(network_address, cost, next_hop)
+
 
     #This function will create the RIP packets that will be sent to its neighbors via the network class. To get the routers neighbors just use self.network.get_neighbors(self.ip)
     def initialize_distance_vector(self):
