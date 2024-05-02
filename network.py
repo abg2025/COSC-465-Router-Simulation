@@ -24,17 +24,23 @@ class Network:
             # create router instance
             router = Router(router_info['name'], router_info['ip'], router_info['mask'], router_info['mac_addr'], self)
             # initialize OSPF routing protocol for the router
-            router.initialize_ospf()
             # add router to devices dictionary
             self.devices[router_info['name']] = router
+        
+        for link in config['links']:
+            self.add_link(link['from'], link['to'])
+        
+        #Initialize RIP AKA Distance Vector Routing 
+        for device in self.devices:
+            if isinstance(device, Router):
+                device.initialize_distance_vector()
 
         # clients
         for client_info in config['clients']:
             # create client instance and add client to devices dictionary
             self.devices[client_info['name']] = Client(client_info['name'], client_info['ip'], client_info['gateway'], client_info['mac_addr'], self)
 
-        for link in config['links']:
-            self.add_link(link['from'], link['to'])
+        
 
     def add_link(self, from_device, to_device):
         # Add bidirectional link between devices

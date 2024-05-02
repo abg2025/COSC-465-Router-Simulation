@@ -69,14 +69,16 @@ class Router:
     def perform_arp_request(self, dest_ip):
         # perform arp request for the destination ip
         arp_request = Packet(self.ip, self.mac_addr, dest_ip, 'FF:FF:FF:FF:FF:FF', 'ARP', {'operation': 'request'})
-        self.network.send_packet(arp_request)
+        self.network.send_packet(arp_request, self.i)
     
 
     #given the network address, cost, next_hop add into routing table where the key is the network_address 
     def update_routing_table(self, network_address, cost, next_hop):
         pass
         
-
+    #when router recieves RIP packet, it decides how to update routing table 
+    def recieve_RIP_packet(self, packet):
+        pass
    
 
     #This function will create the RIP packets that will be sent to its neighbors via the network class. To get the routers neighbors just use self.network.get_neighbors(self.ip)
