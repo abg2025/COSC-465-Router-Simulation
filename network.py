@@ -2,14 +2,17 @@ import json
 import ipaddress
 from router import Router
 from client import Client
+import threading
 
 class Network:
     def __init__(self, config_file):
         # initialize empty dictionaries to store devices and connections 
         self.devices = {}
         self.connections = {}
+        self.setup_semaphore = threading.Semaphore(1)
+        self.is_network_setup = False
         self.load_config(config_file)
-        self.sent_packets = []
+        
 
     def load_config(self, config_file):
         with open(config_file, 'r') as file:
@@ -26,30 +29,34 @@ class Network:
 
     def setup_network(self, config):
         # Create devices
+        self.setup_semaphore.acquire()
+        try:
+            if not self.is_network_setup:
+                 # routers
+                for router_info in config['routers']:
+                    # create router instance
+                    router = Router(router_info['name'], router_info['ip'], router_info['mask'], router_info['mac_addr'], self)
+                    # initialize OSPF routing protocol for the router
+                    # add router to devices dictionary
+                    self.devices[router_info['name']] = router
+                
+                #setup direct links for routers
+                for link in config['links']:
+                    from_router = self.get_device_by_ip(link['from'])
+                    to_router = self.get_device_by_ip(link['to'])
+                    from_router.add_link(to_router)
+                    to_router.add_link(from_router)
+                    
+                #Initialize RIP AKA Distance Vector Routing 
+                for device_name, device in self.devices.items():
+                    device.initialize_distance_vector()
 
-        # routers
-        for router_info in config['routers']:
-            # create router instance
-            router = Router(router_info['name'], router_info['ip'], router_info['mask'], router_info['mac_addr'], self)
-            # initialize OSPF routing protocol for the router
-            # add router to devices dictionary
-            self.devices[router_info['name']] = router
-        
-        #setup direct links for routers
-        for link in config['links']:
-            from_router = self.get_device_by_ip(link['from'])
-            to_router = self.get_device_by_ip(link['to'])
-            from_router.add_link(to_router)
-            to_router.add_link(from_router)
-            
-        #Initialize RIP AKA Distance Vector Routing 
-        for device_name, device in self.devices.items():
-            device.initialize_distance_vector()
-
-        # clients
-        for client_info in config['clients']:
-            # create client instance and add client to devices dictionary
-            self.devices[client_info['name']] = Client(client_info['name'], client_info['ip'], client_info['gateway'], client_info['mac_addr'], self)
+                # clients
+                for client_info in config['clients']:
+                    # create client instance and add client to devices dictionary
+                    self.devices[client_info['name']] = Client(client_info['name'], client_info['ip'], client_info['gateway'], client_info['mac_addr'], self)
+        finally:
+            self.setup_semaphore.release()
 
     
     def is_ip_in_subnet(self, ip1, ip2):

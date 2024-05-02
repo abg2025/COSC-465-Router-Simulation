@@ -19,7 +19,7 @@ class TestNetworkSimulation(unittest.TestCase):
         """Test if packet sent from ClientA reaches ClientC"""
         clientA = self.network.devices['ClientA']
         clientC = self.network.devices['ClientC']
-        packet = Packet(clientA.ip, clientA.mac_addr, clientC.ip, clientC.mac_addr, "IP", "Hello, ClientB!")
+        packet = Packet(clientA.ip, clientA.mac_addr, clientC.ip, clientC.mac_addr, "IP", "Hello, ClientC!")
         clientA.send_packet(packet)
         self.assertTrue(packet in clientC.received_packets)
     
