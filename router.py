@@ -22,15 +22,15 @@ class Router:
             self.handle_arp_reply(packet)
         elif packet.packet_type == 'IP':
             self.handle_ip(packet)
-        elif packet.packet_type == 'OSPF':
-            self.handle_ospf_packet(packet)
+        elif packet.packet_type == 'RIP':
+            self.receive_RIP_packet(packet)
 
     def handle_arp_reply(self, packet):
         # handle arp reply packets
         if packet.payload['operation'] == 'request':
             # send arp reply back
             arp_reply = Packet(self.ip, self.mac_addr, packet.source_ip, packet.src_mac_addr, 'ARP', {'operation': 'reply'})
-            self.network.send_packet(arp_reply)
+            self.network.send_packet(arp_reply, self.ip, packet.source_ip)
             # update arp table with the sender's ip and mac addresses
             self.arp_table[packet.source_ip] = packet.src_mac_addr
         elif packet.payload['operation'] == 'reply':
@@ -41,35 +41,30 @@ class Router:
         # check if ip1 is in the same subnet as IP2
         ip1 = ipaddress.IPv4Address(ip1)
         ip2 = ipaddress.IPv4Address(ip2)
-        network_address = ipaddress.IPv4Network(ip2.exploded + "/24", strict=False)
+        network_address = ipaddress.IPv4Network(ip2.exploded + self.mask, strict=False)
         return ip1 in network_address
 
     def handle_ip(self, packet):
         # handle ip packets
-        destination = packet.dest_ip
-        # check if destination mac address is known
-        if not self.arp_table[destination]:
-            # if destination is in the same subnet, perform arp request
-            if self.is_ip_in_subnet(destination, self.ip + self.mask):
-                self.perform_arp_request(self, destination)
+        destination = self.get_network_address_string(packet.dest_ip)
+        # check if destination and router are on the same network AKA if destination is routers client
+        if destination == self.get_network_address_string(self.ip):
+            if packet.dest_ip not in self.arp_table != None:
+                # if destination
+                self.perform_arp_request(destination)
                 # check if destination ip is in the routing table
                 time.sleep(1)
+            self.network.send_packet(packet, self.ip, packet.dest_ip)
         for route in self.routing_table:
             if destination == route['dest_ip']:
                 next_hop_ip = route['next_hop_ip']
-                next_hop_mac = self.network.resolve_mac(next_hop_ip)
-                # update packet with next hop mac address
-                packet.dest_mac_addr = next_hop_mac
-                packet.src_mac_addr = self.mac_addr
-                # send packet to the next hop
-                self.network.send_packet(packet, )
+                self.network.send_packet(packet, self.ip, next_hop_ip)
                 return
-        print("No route found for IP: {}".format(destination))
     
     def perform_arp_request(self, dest_ip):
         # perform arp request for the destination ip
         arp_request = Packet(self.ip, self.mac_addr, dest_ip, 'FF:FF:FF:FF:FF:FF', 'ARP', {'operation': 'request'})
-        self.network.send_packet(arp_request, self.i)
+        self.network.send_packet(arp_request, self.ip, dest_ip)
     
 
     #given the network address, cost, next_hop add into routing table where the key is the network_address 
@@ -108,7 +103,20 @@ class Router:
 
     #This function will create the RIP packets that will be sent to its neighbors via the network class. To get the routers neighbors just use self.network.get_neighbors(self.ip)
     def initialize_distance_vector(self):
-        pass
+        if len(self.routing_table) > 1:
+            for route in self.routing_table:
+                routes = [d for d in self.routing_table if d != route]
+                rip_packet = Packet(self.ip, self.mac_addr, route['next_hop_ip'], 'N/A', 'RIP', routes)
+                self.network.send_packet(rip_packet, self.ip, route['next_hop_ip'])
+    
+    def get_network_address_string(self, ip):
+        network_address = ipaddress.IPv4Network(ip + self.mask, strict=False)
+        return network_address.exploded
+    
+    def add_link(self, router):
+        network_address = self.get_network_address_string(router.ip)
+        self.update_routing_table(network_address,0,router.ip)
+
         
         
 

@@ -11,10 +11,9 @@ class TestNetworkSimulation(unittest.TestCase):
         """Test if a packet sent from ClientA reaches ClientB."""
         clientA = self.network.devices['ClientA']
         clientB = self.network.devices['ClientB']
-        router1 = self.network.devices
         packet = Packet("192.168.1.2", "00:00:00:00:02:01", "111.122.1.2", "00:00:00:00:02:02", "IP", "Hello, ClientB!")
-        clientA.send_packet(packet, "Hi ClientB")
-        self.assertTrue(("192.168.1.1" in clientA.arp_table.keys()) == True)
+        clientA.send_packet(packet)
+        self.assertTrue(packet in clientB.received_packets)
 
 if __name__ == '__main__':
     unittest.main()

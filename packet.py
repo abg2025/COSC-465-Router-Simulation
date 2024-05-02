@@ -1,4 +1,5 @@
 class Packet:
+    num = 0
     def __init__(self, source_ip, src_mac_addr, dest_ip, dest_mac_addr, packet_type, payload=''):
         # initialize packet attributes
         self.source_ip = source_ip # source ip address
@@ -7,6 +8,7 @@ class Packet:
         self.dest_mac_addr = dest_mac_addr # destination mac address
         self.packet_type = packet_type # type of packet 
         self.payload = payload # packet payload
+        Packet.num += 1
         self.checksum = self.calculate_checksum() # calculate and set checksum
         print(self)
 
@@ -22,4 +24,4 @@ class Packet:
 
     def __str__(self):
         # string representation of the packet
-        return "Packet({}): {} -> {}".format(self.packet_type, self.source_ip, self.dest_ip)
+        return "Packet({}) No. {}: {} -> {}".format(self.packet_type, Packet.num, self.source_ip, self.dest_ip)

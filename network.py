@@ -16,6 +16,13 @@ class Network:
             # set up network based on the loaded configuration
             self.setup_network(config)
 
+    def get_device_by_ip(self, ip):
+        # find a router with the specified ip address
+        for device_name, device in self.devices.items():
+            if isinstance(device, Router) and device.ip == ip:
+                return device
+        return None
+
     def setup_network(self, config):
         # Create devices
 
@@ -27,9 +34,13 @@ class Network:
             # add router to devices dictionary
             self.devices[router_info['name']] = router
         
+        #setup direct links for routers
         for link in config['links']:
-            self.add_link(link['from'], link['to'])
-        
+            from_router = self.get_device_by_ip(link['from'])
+            to_router = self.get_device_by_ip(link['to'])
+            from_router.add_link(to_router)
+            to_router.add_link(from_router)
+            
         #Initialize RIP AKA Distance Vector Routing 
         for device in self.devices:
             if isinstance(device, Router):
@@ -40,28 +51,6 @@ class Network:
             # create client instance and add client to devices dictionary
             self.devices[client_info['name']] = Client(client_info['name'], client_info['ip'], client_info['gateway'], client_info['mac_addr'], self)
 
-        
-
-    def add_link(self, from_device, to_device):
-        # Add bidirectional link between devices
-        if from_device not in self.connections:
-            self.connections[from_device] = []
-        if to_device not in self.connections:
-            self.connections[to_device] = []
-
-        self.connections[from_device].append(to_device)
-        self.connections[to_device].append(from_device)
-
-    def get_neighbors(self, device_ip):
-        # Get neighbors of a device based on connections
-        return self.connections.get(device_ip, [])
-    
-    def get_router_by_ip(self, ip):
-        # find a router with the specified ip address
-        for device_name, device in self.devices.items():
-            if isinstance(device, Router) and device.ip == ip:
-                return device
-        return None
     
     def is_ip_in_subnet(self, ip1, ip2):
         # check if ip1 is in the same subnet as IP2
@@ -70,33 +59,34 @@ class Network:
         network_address = ipaddress.IPv4Network(ip2.exploded + "/24", strict=False)
         return ip1 in network_address
                 
-    def send_broadcast_packet(self, packet):
+    def send_broadcast_packet(self, packet, source_ip, dest_ip):
         # send a broadcast packet to all devices in the same subnet as the source ip
         for device_name, device in self.devices.items():
             if self.is_ip_in_subnet(device.ip, packet.source_ip) and device.ip != packet.source_ip:
                 device.receive_packet(packet)
 
-    def send_RIP_packet(self, packet):
+    def send_RIP_packet(self, packet, source_ip, dest_ip):
         # send an OSPF packet to the destination router
-        dest_router = self.get_router_by_ip(packet.dest_ip)
+        dest_router = self.get_device_by_ip(packet.dest_ip)
         if dest_router != None:
             dest_router.receive_packet(packet)
         else:
-            print("No router found for OSPF packet destination IP: {}".format(packet.dest_ip))
+            print("No router found for RIP packet destination IP: {}".format(dest_ip))
 
-    def send_normal_packet(self, packet):
+    def send_normal_packet(self, packet, source_ip, dest_ip):
         # send a normal packet to the destination device
         for device_name, device in self.devices.items():
-            if packet.dest_ip == device.ip:
+            if dest_ip == device.ip:
                 device.receive_packet(packet)
                 return 
 
     def send_packet(self, packet, source_ip, dest_ip):
         # determine packet type and route accordingly
+        print("Sending {} packet to {} from {}".format(packet.packet_type, source_ip,dest_ip))
         if packet.packet_type == 'RIP':
-            self.send_RIP_packet(packet)
+            self.send_RIP_packet(packet, source_ip, dest_ip)
         elif packet.dest_mac_addr == 'FF:FF:FF:FF:FF:FF':
-            self.send_broadcast_packet(packet)
+            self.send_broadcast_packet(packet, source_ip, dest_ip)
         else:
-            self.send_normal_packet(packet)
+            self.send_normal_packet(packet, source_ip, dest_ip)
 
