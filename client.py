@@ -34,16 +34,19 @@ class Client:
         self.network.send_packet(packet, self.ip, self.gateway)  # Send using device name as identifier
 
     def receive_packet(self, packet):
-        if packet.verify_checksum():
-            self.received_packets.append(packet)  # Store the packet if checksum is valid
-            print("Received valid packet at {}: {}".format(self.ip, packet.payload))
-            if packet.packet_type == 'ARP' and packet.payload['operation'] == 'reply':
-                # Update ARP table if ARP reply received
-                self.arp_table[packet.source_ip] = packet.src_mac_addr
-            elif packet.packet_type == 'ARP' and packet.payload['operation'] == 'request':
-                self.handle_arp_packet(packet)
+        if packet in self.received_packets:
+            return
         else:
-            print("Packet checksum invalid, discarding packet.")
+            if packet.verify_checksum():
+                self.received_packets.append(packet)  # Store the packet if checksum is valid
+                print("Received valid packet at {}: {}".format(self.ip, packet.payload))
+                if packet.packet_type == 'ARP' and packet.payload['operation'] == 'reply':
+                    # Update ARP table if ARP reply received
+                    self.arp_table[packet.source_ip] = packet.src_mac_addr
+                elif packet.packet_type == 'ARP' and packet.payload['operation'] == 'request':
+                    self.handle_arp_packet(packet)
+            else:
+                print("Packet checksum invalid, discarding packet.")
 
     def perform_arp_request(self, dest_ip):
         # Broadcast ARP request to resolve IP address to MAC address

@@ -9,6 +9,7 @@ class Network:
         self.devices = {}
         self.connections = {}
         self.load_config(config_file)
+        self.sent_packets = []
 
     def load_config(self, config_file):
         with open(config_file, 'r') as file:
@@ -19,7 +20,7 @@ class Network:
     def get_device_by_ip(self, ip):
         # find a router with the specified ip address
         for device_name, device in self.devices.items():
-            if isinstance(device, Router) and device.ip == ip:
+            if  device.ip == ip:
                 return device
         return None
 
@@ -42,9 +43,8 @@ class Network:
             to_router.add_link(from_router)
             
         #Initialize RIP AKA Distance Vector Routing 
-        for device in self.devices:
-            if isinstance(device, Router):
-                device.initialize_distance_vector()
+        for device_name, device in self.devices.items():
+            device.initialize_distance_vector()
 
         # clients
         for client_info in config['clients']:
@@ -89,4 +89,5 @@ class Network:
             self.send_broadcast_packet(packet, source_ip, dest_ip)
         else:
             self.send_normal_packet(packet, source_ip, dest_ip)
+        return
 

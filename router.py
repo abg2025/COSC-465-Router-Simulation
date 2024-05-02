@@ -15,15 +15,20 @@ class Router:
         self.arp_table = {} #arp table
         self.ospf_neighbors = set()  # OSPF neighbors
         self.lsdb = {}  # Link State Database
+        self.received_packets = []
 
     def receive_packet(self, packet):
+        if packet in self.received_packets:
+            return
+        else:
         # handle incoming packets based on their types
-        if packet.packet_type == 'ARP':
-            self.handle_arp_reply(packet)
-        elif packet.packet_type == 'IP':
-            self.handle_ip(packet)
-        elif packet.packet_type == 'RIP':
-            self.receive_RIP_packet(packet)
+            self.received_packets.append(packet)
+            if packet.packet_type == 'ARP':
+                self.handle_arp_reply(packet)
+            elif packet.packet_type == 'IP':
+                self.handle_ip(packet)
+            elif packet.packet_type == 'RIP':
+                self.receive_RIP_packet(packet)
 
     def handle_arp_reply(self, packet):
         # handle arp reply packets
@@ -79,8 +84,8 @@ class Router:
    '''
    #when router recieves RIP packet, it decides how to update routing table
     def receive_RIP_packet(self, packet):
-        for route in packet.payload['routes']:
-            network_address = route['network_address']
+        for route in packet.payload:
+            network_address = route['dest_ip']
             cost = route['cost'] + 1  # increment cost by 1 to represent the hop count
             next_hop = packet.source_ip
             
@@ -103,15 +108,15 @@ class Router:
 
     #This function will create the RIP packets that will be sent to its neighbors via the network class. To get the routers neighbors just use self.network.get_neighbors(self.ip)
     def initialize_distance_vector(self):
-        if len(self.routing_table) > 1:
-            for route in self.routing_table:
-                routes = [d for d in self.routing_table if d != route]
-                rip_packet = Packet(self.ip, self.mac_addr, route['next_hop_ip'], 'N/A', 'RIP', routes)
-                self.network.send_packet(rip_packet, self.ip, route['next_hop_ip'])
+        for route in self.routing_table:
+            routes = [d for d in self.routing_table if d != route]
+            rip_packet = Packet(self.ip, self.mac_addr, route['next_hop_ip'], 'N/A', 'RIP', routes)
+            self.network.send_packet(rip_packet, self.ip, route['next_hop_ip'])
     
     def get_network_address_string(self, ip):
         network_address = ipaddress.IPv4Network(ip + self.mask, strict=False)
-        return network_address.exploded
+        return str(network_address.network_address)
+
     
     def add_link(self, router):
         network_address = self.get_network_address_string(router.ip)
