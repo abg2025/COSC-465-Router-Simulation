@@ -15,13 +15,13 @@ class TestNetworkSimulation(unittest.TestCase):
         clientA.send_packet(packet)
         self.assertTrue(packet in clientB.received_packets)
     
-    def test_packet_transfer2(self): #Test case can be used for network_config_dynamic.json comment out if using another json file
-        """Test if packet sent from ClientA reaches ClientC"""
-        clientA = self.network.devices['ClientA']
-        clientC = self.network.devices['ClientC']
-        packet = Packet(clientA.ip, clientA.mac_addr, clientC.ip, clientC.mac_addr, "IP", "Hello, ClientC!")
-        clientA.send_packet(packet)
-        self.assertTrue(packet in clientC.received_packets)
+    # def test_packet_transfer2(self): #Test case can be used for network_config_dynamic.json comment out if using another json file
+    #     """Test if packet sent from ClientA reaches ClientC"""
+    #     clientA = self.network.devices['ClientA']
+    #     clientC = self.network.devices['ClientC']
+    #     packet = Packet(clientA.ip, clientA.mac_addr, clientC.ip, clientC.mac_addr, "IP", "Hello, ClientC!")
+    #     clientA.send_packet(packet)
+    #     self.assertTrue(packet in clientC.received_packets)
     
 
 if __name__ == '__main__':

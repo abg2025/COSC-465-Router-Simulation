@@ -34,7 +34,7 @@ We developed a detailed testing program using Python's `unittest` framework to c
 ### Test Scenarios
 - **Packet Routing:** We check if packets are routed correctly with direct links according to the network layout specified in `network_config_test.json`.
 - **Dynamic Topology Support:** Our tests make sure the simulation can adjust to any network layout, especially those using dynamic routing (RIP using Distance Vector Routing) and direct links. The layout was specified in `network_config_dynamic.json`
--  **Same Network Packet Sending:** Our tests make sure the simulation can adjust to multiple clients connected to the same router via network address. The layout was specified in `network_config_1router.json`.
+-  **Same Network Packet Sending:** Our tests make sure the simulation can adjust to multiple clients connected to the same router. The layout was specified in `network_config_1router.json`.
 - **Create Your Own Network Test:** To create your own test using the unittest library add a new function within the TestNetworkSimulation class. If you want to test to see if a router or client recieved a specific packet, you can access their recieved_packets property and assertTrue to see if the device ever recieved it. You can also create your own network topologies by creating a new json file. Make sure to follow this template: 
 ```json
 {
@@ -60,7 +60,7 @@ We developed a detailed testing program using Python's `unittest` framework to c
     ]
   }
 ```
-Make sure that the names of both clients and routers are different for when you add more. Clients gateway must be on the same network address as the router you want to add it to. Mask must be /24 and if you have multiple routers, you need to make sure that the router is atleast connected to one other router on the network using the links. The routers in this simulation are connected via direct links. 
+Make sure that the names of both clients and routers are different for when you add more. Clients gateway must be on the same network address as the router you want to add it to. Mask must be 24 bits and if you have multiple routers, you need to make sure that the router is atleast connected to one other router on the network using the links. The routers in this simulation are connected via direct links (Ethernet, etc). 
 
 
 To run the tests, use this command:
@@ -69,6 +69,8 @@ python3 -m unittest test
 ```
 
 ### Challenges and Limitations
-- One problem we discovered with using functions to act as our sending packets, was we were getting recursion errors. The same function within classes would be called multiple times, creating this infinite loop. To stop this, we added `recieved_packets` list in client and router so that if the specific packet was already sent to the device, we would immiedately return in the devices `recieve_packet()` function. While this solved our problem, if we ever wanted to implement ACKs in our direct links protocol, our network simulation will not be able to handle those. 
-- One limitation of our network is that it is not exactly scalable since we're using RIP as our routing protocol. 
+- One problem we discovered with using functions to act as our sending packets, was we were getting exceeding recursion depth errors. The same function within classes would be called multiple times, creating this infinite loop. To stop this, we added `recieved_packets` list in client and router so that if the specific packet was already sent to the device, we would immiedately return in the devices `recieve_packet()` function. While this solved our problem, if we ever wanted to implement ACKs in our direct links protocol, our network simulation will not be able to handle those. If we were to re do the project, we would have made it event driven instead where we would have a queue that fills up with different kinds of events, packet transmission, packet creation, replies, etc. and a function that keeps running until the queue is empty. 
+- One limitation of our network is that it is not exactly scalable since we're using RIP as our routing protocol.
 - Another limitation is that our network isn't exactly realistic since we dont ever have any latency with packet transmission over the network. Some of the functions have a time.sleep(1) since it required to wait for table to be updated so that it can resend a packet. 
+- Router doesn't handle longest-prefix matching for if there are multiple subnets with different masks, it chooses the largest mask (longest-prefix), since its a more precise match. For the sake of our simulation though, we just assume the mask is always 24 bits. 
+- In our network, routers are connected with direct links such as Ethernet cables, which means they need to know each other's MAC addresses to send packets directly to each other at Layer 2. When a packet needs to go to a router on a different network, it gets handled at Layer 3. This is where routers use IP addresses to decide the best way to send the packet across different parts of the network. This is what is supposed to happen, however we never actually implemented a way for the routers to find eachothers MAC address. 
