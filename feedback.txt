@@ -1,0 +1,8 @@
+OVERALL: Progressing
+
+* When a packet is destined for a router in the same subnet, it should be sent only using layer 2 (i.e., should not send to gateway)
+* Your code for checking if a packet has already been received assumes it is the exact same instance of the packet and does not check if a packet is a different instance with the same field values
+* Costs in routing tables do not reflect proper number of hops distance
+* Routing table does not include router's own subnets by default; depending on the sequence of RIP packets, a router may add its own subnet with another router as the next hop, which is also incorrect
+* In some topologies an ARP packet is sent for addresses that are never the destination or gateway for any packet
+* Client sends ARP reply even when it's IP address is not the destination of the ARP request it received
